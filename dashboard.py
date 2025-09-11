@@ -27,6 +27,10 @@ if uploaded_file:
     df = data_loader.load_data(uploaded_file)
 
     if df is not None:
+        # 🔹 Ajuste: converter automaticamente colunas de texto em categóricas
+        for col in df.select_dtypes(include="object").columns:
+            df[col] = df[col].astype("category")
+
         st.success(f"Arquivo '{uploaded_file.name}' carregado com sucesso! A análise será iniciada.")
         
         # Exibe um preview dos dados
