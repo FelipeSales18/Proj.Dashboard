@@ -33,9 +33,9 @@ if uploaded_file:
 
         st.success(f"Arquivo '{uploaded_file.name}' carregado com sucesso! A análise será iniciada.")
         
-        # Exibe um preview dos dados
-        st.subheader("Amostra dos Dados Carregados")
-        st.dataframe(df.head())
+        # Exibe um preview dos dados em um expander
+        with st.expander("Clique para ver uma amostra dos dados carregados"):
+            st.dataframe(df.head())
         st.markdown("---")
 
         # --- 3. ANÁLISE AUTOMÁTICA DA IA ---

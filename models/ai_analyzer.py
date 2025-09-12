@@ -40,7 +40,6 @@ def analyze_dataframe(df):
         corr_matrix = df[numeric_cols].corr()
         analysis_data['corr_matrix'] = corr_matrix
         
-        # Encontra os pares mais correlacionados (excluindo a correlação de uma coluna com ela mesma)
         corr_pairs = corr_matrix.unstack().sort_values(ascending=False).drop_duplicates()
         high_corr = corr_pairs[(corr_pairs < 1) & (corr_pairs.abs() > 0.7)]
         
@@ -48,11 +47,11 @@ def analyze_dataframe(df):
             report.append("Foram encontradas as seguintes correlações fortes (positivas ou negativas):")
             for (col1, col2), val in high_corr.items():
                 tipo = "positiva" if val > 0 else "negativa"
-                report.append(f"  - **`{col1}`** e **`{col2}`**: Correlação {tipo} de `{val:.2f}`. Isso sugere uma forte relação entre elas.")
+                report.append(f"  - **`{col1}`** e **`{col2}`**: Correlação {tipo} de `{val:.2f}`.")
         else:
-            report.append("- Nenhuma correlação forte (acima de 0.7 ou abaixo de -0.7) foi encontrada entre as colunas numéricas.")
+            report.append("- Nenhuma correlação forte (acima de 0.7) foi encontrada.")
 
-    # 4. Análise de Outliers (Valores Atípicos)
+    # 4. Análise de Outliers
     if numeric_cols:
         report.append("\n### 4. Análise de Outliers")
         outliers_found = False
@@ -65,25 +64,22 @@ def analyze_dataframe(df):
             
             outliers = df[(df[col] < lower_bound) | (df[col] > upper_bound)]
             if not outliers.empty:
-                report.append(f"- A coluna **`{col}`** parece ter `{len(outliers)}` valor(es) atípico(s). Isso pode indicar erros de entrada ou eventos raros que merecem atenção.")
+                report.append(f"- A coluna **`{col}`** parece ter `{len(outliers)}` valor(es) atípico(s).")
                 outliers_found = True
         
         if not outliers_found:
-            report.append("- Nenhuma coluna parece ter outliers significativos com base no método IQR.")
+            report.append("- Nenhuma coluna parece ter outliers significativos.")
 
-    # 5. Análise de Tendência Temporal
-    if datetime_cols and numeric_cols:
-        report.append("\n### 5. Análise de Tendência Temporal")
-        date_col = datetime_cols[0] # Usa a primeira coluna de data para a análise
-        report.append(f"Analisando tendências ao longo do tempo usando a coluna **`{date_col}`**:")
-        
-        for col in numeric_cols:
-            # Uma forma simples de verificar tendência é correlacionar com o tempo
-            df_sorted = df.sort_values(by=date_col)
-            trend_corr = df_sorted[col].corr(df_sorted[date_col].astype('int64'))
-            
-            if abs(trend_corr) > 0.6:
-                direcao = "crescimento" if trend_corr > 0 else "decréscimo"
-                report.append(f"- A coluna **`{col}`** mostra uma forte tendência de **{direcao}** ao longo do tempo.")
+    # 5. Análise de Destaques (Top Categorias)
+    if categorical_cols and numeric_cols:
+        report.append("\n### 5. Análise de Destaques")
+        # Usar 'Vendas' ou 'Receita' como métrica principal, se existirem
+        metric_col = next((col for col in ['Vendas', 'Receita_Liquida', 'Receita'] if col in numeric_cols), numeric_cols[0])
+        report.append(f"Analisando os destaques com base na coluna **`{metric_col}`**:")
+
+        for cat_col in categorical_cols:
+            if df[cat_col].nunique() > 1: # Analisa apenas se houver mais de uma categoria
+                top_performer = df.groupby(cat_col)[metric_col].sum().idxmax()
+                report.append(f"- Em **`{cat_col}`**, a categoria com maior volume de `{metric_col}` é **{top_performer}**.")
 
     return "\n".join(report), analysis_data

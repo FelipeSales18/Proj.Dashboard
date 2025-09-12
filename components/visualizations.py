@@ -23,24 +23,38 @@ def render_visualizations(df, analysis_data):
         if not numeric_cols:
             st.warning("Nenhuma coluna numérica para exibir histograma.")
         else:
-            col_dist = st.selectbox("Selecione uma coluna numérica para ver sua distribuição:", numeric_cols)
+            col_dist = st.selectbox("Selecione uma coluna numérica:", numeric_cols)
             if col_dist:
                 fig_hist = px.histogram(df, x=col_dist, title=f'Distribuição de {col_dist}', nbins=30)
                 st.plotly_chart(fig_hist, use_container_width=True)
 
-        st.markdown("#### Contagem de Colunas Categóricas")
+        st.markdown("---")
+        st.markdown("#### Análise de Colunas Categóricas")
         if not categorical_cols:
-             st.warning("Nenhuma coluna categórica para exibir gráfico de barras.")
+             st.warning("Nenhuma coluna categórica para analisar.")
         else:
-            col_cat = st.selectbox("Selecione uma coluna categórica para ver a contagem:", categorical_cols)
+            col_cat = st.selectbox("Selecione uma coluna categórica:", categorical_cols)
+            
+            chart_type = st.radio(
+                "Escolha o tipo de gráfico:",
+                ("Gráfico de Barras", "Gráfico de Pizza"),
+                horizontal=True
+            )
+
             if col_cat:
-                counts = df[col_cat].value_counts().nlargest(20) # Limita às 20 maiores categorias
-                fig_bar = px.bar(counts, x=counts.index, y=counts.values, title=f'Contagem em {col_cat}', labels={'x': col_cat, 'y': 'Contagem'})
-                st.plotly_chart(fig_bar, use_container_width=True)
+                counts = df[col_cat].value_counts().nlargest(10) # Limita às 10 maiores categorias
+                
+                if chart_type == "Gráfico de Barras":
+                    fig_bar = px.bar(counts, x=counts.index, y=counts.values, title=f'Contagem em {col_cat}', labels={'x': col_cat, 'y': 'Contagem'})
+                    st.plotly_chart(fig_bar, use_container_width=True)
+                
+                elif chart_type == "Gráfico de Pizza":
+                    fig_pie = px.pie(counts, names=counts.index, values=counts.values, title=f'Distribuição em {col_cat}')
+                    st.plotly_chart(fig_pie, use_container_width=True)
 
     # Aba 2: Relação entre duas variáveis
     with tab2:
-        st.markdown("#### Relação entre Colunas Numéricas (Scatter Plot)")
+        st.markdown("#### Relação entre Colunas Numéricas (Gráfico de Dispersão)")
         if len(numeric_cols) < 2:
             st.warning("São necessárias pelo menos duas colunas numéricas para um gráfico de dispersão.")
         else:
@@ -51,7 +65,8 @@ def render_visualizations(df, analysis_data):
             if x_axis and y_axis:
                 fig_scatter = px.scatter(df, x=x_axis, y=y_axis, title=f'{y_axis} vs. {x_axis}', trendline="ols")
                 st.plotly_chart(fig_scatter, use_container_width=True)
-
+        
+        st.markdown("---")
         st.markdown("#### Mapa de Calor de Correlação")
         if 'corr_matrix' in analysis_data:
             corr_matrix = analysis_data['corr_matrix']
