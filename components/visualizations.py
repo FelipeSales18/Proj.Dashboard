@@ -15,7 +15,7 @@ def render_visualizations(df, analysis_data):
     datetime_cols = analysis_data.get('datetime_cols', [])
 
     # Cria abas para organizar as visualizações
-    tab1, tab2, tab3 = st.tabs(["Análise Univariada", "Análise Bivariada", "Análise Temporal"])
+    tab1, tab2, tab3, tab4 = st.tabs(["Análise Univariada", "Análise Bivariada", "Análise Temporal", "Destaques de Vendas"])
 
     # Aba 1: Análise de uma variável por vez
     with tab1:
@@ -43,13 +43,15 @@ def render_visualizations(df, analysis_data):
 
             if col_cat:
                 counts = df[col_cat].value_counts().nlargest(10) # Limita às 10 maiores categorias
-                
+                counts_df = counts.reset_index()
+                counts_df.columns = [col_cat, 'Contagem']
+
                 if chart_type == "Gráfico de Barras":
-                    fig_bar = px.bar(counts, x=counts.index, y=counts.values, title=f'Contagem em {col_cat}', labels={'x': col_cat, 'y': 'Contagem'})
+                    fig_bar = px.bar(counts_df, x=col_cat, y='Contagem', title=f'Contagem em {col_cat}')
                     st.plotly_chart(fig_bar, use_container_width=True)
                 
                 elif chart_type == "Gráfico de Pizza":
-                    fig_pie = px.pie(counts, names=counts.index, values=counts.values, title=f'Distribuição em {col_cat}')
+                    fig_pie = px.pie(counts_df, names=col_cat, values='Contagem', title=f'Distribuição em {col_cat}')
                     st.plotly_chart(fig_pie, use_container_width=True)
 
     # Aba 2: Relação entre duas variáveis
@@ -95,3 +97,31 @@ def render_visualizations(df, analysis_data):
                 df_sorted = df.sort_values(by=time_col)
                 fig_line = px.line(df_sorted, x=time_col, y=value_col_time, title=f'{value_col_time} ao longo do tempo', markers=True)
                 st.plotly_chart(fig_line, use_container_width=True)
+
+    # Aba 4: Destaques de Vendas
+    with tab4:
+        st.markdown("#### Desempenho de Vendedores e Produtos")
+
+        if 'top_sellers' in analysis_data:
+            st.markdown("##### Top 5 Vendedores com Mais Vendas")
+            top_sellers = analysis_data['top_sellers']
+            top_sellers_df = top_sellers.reset_index()
+            top_sellers_df.columns = ['Vendedor', 'Total de Vendas']
+            fig = px.bar(top_sellers_df, x='Vendedor', y='Total de Vendas', title='Top 5 Vendedores por Vendas')
+            st.plotly_chart(fig, use_container_width=True)
+
+        if 'top_products' in analysis_data:
+            st.markdown("##### Top 5 Produtos Mais Vendidos")
+            top_products = analysis_data['top_products']
+            top_products_df = top_products.reset_index()
+            top_products_df.columns = ['Produto', 'Total de Vendas']
+            fig = px.bar(top_products_df, x='Produto', y='Total de Vendas', title='Top 5 Produtos Mais Vendidos')
+            st.plotly_chart(fig, use_container_width=True)
+
+        if 'bottom_products' in analysis_data:
+            st.markdown("##### Top 5 Produtos Menos Vendidos")
+            bottom_products = analysis_data['bottom_products']
+            bottom_products_df = bottom_products.reset_index()
+            bottom_products_df.columns = ['Produto', 'Total de Vendas']
+            fig = px.bar(bottom_products_df, x='Produto', y='Total de Vendas', title='Top 5 Produtos Menos Vendidos')
+            st.plotly_chart(fig, use_container_width=True)

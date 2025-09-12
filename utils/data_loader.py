@@ -16,17 +16,19 @@ def load_data(uploaded_file):
         return None
         
     try:
-        # Tenta ler o arquivo Excel. O engine 'openpyxl' é bom para .xlsx.
+        # Tenta ler o arquivo Excel.
         df = pd.read_excel(uploaded_file, engine='openpyxl')
         
-        # Tenta converter colunas que parecem datas para o formato datetime
+        # Tenta converter colunas que PARECEM datas para o formato datetime de forma mais segura
         for col in df.columns:
-            if df[col].dtype == 'object':
-                try:
-                    df[col] = pd.to_datetime(df[col], errors='coerce', dayfirst=True)
-                except (ValueError, TypeError):
-                    # Se não for uma data, mantém como está
-                    pass
+            # Converte apenas se 'data' ou 'date' estiver no nome da coluna (case-insensitive)
+            if 'data' in str(col).lower() or 'date' in str(col).lower():
+                if df[col].dtype == 'object':
+                    try:
+                        df[col] = pd.to_datetime(df[col], errors='coerce', dayfirst=True)
+                    except (ValueError, TypeError):
+                        # Se não for uma data, mantém como está
+                        pass
         
         return df
     except Exception as e:

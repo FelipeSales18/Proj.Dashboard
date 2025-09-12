@@ -82,4 +82,30 @@ def analyze_dataframe(df):
                 top_performer = df.groupby(cat_col)[metric_col].sum().idxmax()
                 report.append(f"- Em **`{cat_col}`**, a categoria com maior volume de `{metric_col}` é **{top_performer}**.")
 
+    # 6. Destaques de Vendas (Vendedores e Produtos)
+    if 'Vendedor' in df.columns and 'Vendas' in df.columns:
+        report.append("\n### 6. Destaques de Vendas")
+        
+        # Vendedores que mais compraram
+        top_sellers = df.groupby('Vendedor')['Vendas'].sum().nlargest(5)
+        report.append("\n**Top 5 Vendedores por Vendas:**")
+        for seller, total_sales in top_sellers.items():
+            report.append(f"- **{seller}**: R$ {total_sales:,.2f}")
+        analysis_data['top_sellers'] = top_sellers
+
+    if 'Categoria_Produto' in df.columns and 'Vendas' in df.columns:
+        # Produtos que mais venderam
+        top_products = df.groupby('Categoria_Produto')['Vendas'].sum().nlargest(5)
+        report.append("\n**Top 5 Produtos Mais Vendidos:**")
+        for product, total_sales in top_products.items():
+            report.append(f"- **{product}**: R$ {total_sales:,.2f}")
+        analysis_data['top_products'] = top_products
+        
+        # Produtos que menos venderam
+        bottom_products = df.groupby('Categoria_Produto')['Vendas'].sum().nsmallest(5)
+        report.append("\n**Top 5 Produtos Menos Vendidos:**")
+        for product, total_sales in bottom_products.items():
+            report.append(f"- **{product}**: R$ {total_sales:,.2f}")
+        analysis_data['bottom_products'] = bottom_products
+
     return "\n".join(report), analysis_data
