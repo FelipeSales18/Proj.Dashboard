@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 
 from components import sidebar, visualizations
-from utils import data_loader
+from utils import data_loader, pdf_generator # Importe o novo módulo
 from models import ai_analyzer
 
 # --- 1. CONFIGURAÇÃO DA PÁGINA ---
@@ -50,6 +50,20 @@ if uploaded_file:
                 # --- 4. VISUALIZAÇÕES INTERATIVAS ---
                 st.subheader("📊 Explore Seus Dados")
                 visualizations.render_visualizations(df, analysis_data)
+
+                # --- 5. GERAÇÃO E DOWNLOAD DO PDF ---
+                st.markdown("---")
+                st.subheader("📄 Exportar Relatório")
+                
+                # Gera o PDF em memória quando o botão é clicado
+                pdf_bytes = pdf_generator.create_pdf_report(analysis_report, df, analysis_data)
+                
+                st.download_button(
+                    label="Baixar Relatório Completo em PDF",
+                    data=pdf_bytes,
+                    file_name=f"relatorio_analise_{uploaded_file.name}.pdf",
+                    mime="application/pdf"
+                )
 
             except Exception as e:
                 st.error(f"Ocorreu um erro durante a análise dos dados: {e}")
