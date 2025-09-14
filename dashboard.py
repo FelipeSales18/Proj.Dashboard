@@ -49,14 +49,15 @@ if uploaded_file:
 
                 # --- 4. VISUALIZAÇÕES INTERATIVAS ---
                 st.subheader("📊 Explore Seus Dados")
-                visualizations.render_visualizations(df, analysis_data)
+                # Captura os gráficos gerados para usar no PDF
+                generated_charts = visualizations.render_visualizations(df, analysis_data)
 
                 # --- 5. GERAÇÃO E DOWNLOAD DO PDF ---
                 st.markdown("---")
                 st.subheader("📄 Exportar Relatório")
                 
-                # Gera o PDF em memória quando o botão é clicado
-                pdf_bytes = pdf_generator.create_pdf_report(analysis_report, df, analysis_data)
+                # Gera o PDF em memória com o novo layout e gráficos dinâmicos
+                pdf_bytes = pdf_generator.create_pdf_report(analysis_report, generated_charts)
                 
                 st.download_button(
                     label="Baixar Relatório Completo em PDF",

@@ -9,7 +9,11 @@ def render_visualizations(df, analysis_data):
     Args:
         df (pd.DataFrame): O DataFrame com os dados.
         analysis_data (dict): Dicionário com os resultados da análise da IA.
+    
+    Returns:
+        dict: Um dicionário contendo as figuras dos gráficos gerados.
     """
+    generated_charts = {}
     numeric_cols = analysis_data.get('numeric_cols', [])
     categorical_cols = analysis_data.get('categorical_cols', [])
     datetime_cols = analysis_data.get('datetime_cols', [])
@@ -27,6 +31,7 @@ def render_visualizations(df, analysis_data):
             if col_dist:
                 fig_hist = px.histogram(df, x=col_dist, title=f'Distribuição de {col_dist}', nbins=30)
                 st.plotly_chart(fig_hist, use_container_width=True)
+                generated_charts['distribuicao_numerica'] = fig_hist
 
         st.markdown("---")
         st.markdown("#### Análise de Colunas Categóricas")
@@ -49,10 +54,12 @@ def render_visualizations(df, analysis_data):
                 if chart_type == "Gráfico de Barras":
                     fig_bar = px.bar(counts_df, x=col_cat, y='Contagem', title=f'Contagem em {col_cat}')
                     st.plotly_chart(fig_bar, use_container_width=True)
+                    generated_charts['analise_categorica'] = fig_bar
                 
                 elif chart_type == "Gráfico de Pizza":
                     fig_pie = px.pie(counts_df, names=col_cat, values='Contagem', title=f'Distribuição em {col_cat}')
                     st.plotly_chart(fig_pie, use_container_width=True)
+                    generated_charts['analise_categorica'] = fig_pie
 
     # Aba 2: Relação entre duas variáveis
     with tab2:
@@ -67,6 +74,7 @@ def render_visualizations(df, analysis_data):
             if x_axis and y_axis:
                 fig_scatter = px.scatter(df, x=x_axis, y=y_axis, title=f'{y_axis} vs. {x_axis}', trendline="ols")
                 st.plotly_chart(fig_scatter, use_container_width=True)
+                generated_charts['dispersao'] = fig_scatter
         
         st.markdown("---")
         st.markdown("#### Mapa de Calor de Correlação")
@@ -82,6 +90,7 @@ def render_visualizations(df, analysis_data):
             ))
             fig_heatmap.update_layout(title="Mapa de Calor de Correlação")
             st.plotly_chart(fig_heatmap, use_container_width=True)
+            generated_charts['mapa_calor_correlacao'] = fig_heatmap
 
     # Aba 3: Análise ao longo do tempo
     with tab3:
@@ -97,6 +106,7 @@ def render_visualizations(df, analysis_data):
                 df_sorted = df.sort_values(by=time_col)
                 fig_line = px.line(df_sorted, x=time_col, y=value_col_time, title=f'{value_col_time} ao longo do tempo', markers=True)
                 st.plotly_chart(fig_line, use_container_width=True)
+                generated_charts['serie_temporal'] = fig_line
 
     # Aba 4: Destaques de Vendas
     with tab4:
@@ -109,6 +119,7 @@ def render_visualizations(df, analysis_data):
             top_sellers_df.columns = ['Vendedor', 'Total de Vendas']
             fig = px.bar(top_sellers_df, x='Vendedor', y='Total de Vendas', title='Top 5 Vendedores por Vendas')
             st.plotly_chart(fig, use_container_width=True)
+            generated_charts['top_vendedores'] = fig
 
         if 'top_products' in analysis_data:
             st.markdown("##### Top 5 Produtos Mais Vendidos")
@@ -117,6 +128,7 @@ def render_visualizations(df, analysis_data):
             top_products_df.columns = ['Produto', 'Total de Vendas']
             fig = px.bar(top_products_df, x='Produto', y='Total de Vendas', title='Top 5 Produtos Mais Vendidos')
             st.plotly_chart(fig, use_container_width=True)
+            generated_charts['top_produtos'] = fig
 
         if 'bottom_products' in analysis_data:
             st.markdown("##### Top 5 Produtos Menos Vendidos")
@@ -125,3 +137,6 @@ def render_visualizations(df, analysis_data):
             bottom_products_df.columns = ['Produto', 'Total de Vendas']
             fig = px.bar(bottom_products_df, x='Produto', y='Total de Vendas', title='Top 5 Produtos Menos Vendidos')
             st.plotly_chart(fig, use_container_width=True)
+            generated_charts['bottom_produtos'] = fig
+
+    return generated_charts
