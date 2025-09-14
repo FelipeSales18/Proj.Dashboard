@@ -18,6 +18,9 @@ def render_visualizations(df, analysis_data):
     categorical_cols = analysis_data.get('categorical_cols', [])
     datetime_cols = analysis_data.get('datetime_cols', [])
 
+    # Paleta de cores padrão para garantir consistência
+    color_palette = px.colors.qualitative.Plotly
+
     # Cria abas para organizar as visualizações
     tab1, tab2, tab3, tab4 = st.tabs(["Análise Univariada", "Análise Bivariada", "Análise Temporal", "Destaques de Vendas"])
 
@@ -29,7 +32,8 @@ def render_visualizations(df, analysis_data):
         else:
             col_dist = st.selectbox("Selecione uma coluna numérica:", numeric_cols)
             if col_dist:
-                fig_hist = px.histogram(df, x=col_dist, title=f'Distribuição de {col_dist}', nbins=30)
+                fig_hist = px.histogram(df, x=col_dist, title=f'Distribuição de {col_dist}', nbins=30,
+                                        color_discrete_sequence=[color_palette[0]]) # Usa a primeira cor da paleta
                 st.plotly_chart(fig_hist, use_container_width=True)
                 generated_charts['distribuicao_numerica'] = fig_hist
 
@@ -47,17 +51,20 @@ def render_visualizations(df, analysis_data):
             )
 
             if col_cat:
-                counts = df[col_cat].value_counts().nlargest(10) # Limita às 10 maiores categorias
+                counts = df[col_cat].value_counts().nlargest(10)
                 counts_df = counts.reset_index()
                 counts_df.columns = [col_cat, 'Contagem']
 
                 if chart_type == "Gráfico de Barras":
-                    fig_bar = px.bar(counts_df, x=col_cat, y='Contagem', title=f'Contagem em {col_cat}')
+                    # CORREÇÃO FINAL: Adiciona a paleta de cores
+                    fig_bar = px.bar(counts_df, x=col_cat, y='Contagem', title=f'Contagem em {col_cat}', color=col_cat,
+                                     color_discrete_sequence=color_palette)
                     st.plotly_chart(fig_bar, use_container_width=True)
                     generated_charts['analise_categorica'] = fig_bar
                 
                 elif chart_type == "Gráfico de Pizza":
-                    fig_pie = px.pie(counts_df, names=col_cat, values='Contagem', title=f'Distribuição em {col_cat}')
+                    fig_pie = px.pie(counts_df, names=col_cat, values='Contagem', title=f'Distribuição em {col_cat}',
+                                     color_discrete_sequence=color_palette)
                     st.plotly_chart(fig_pie, use_container_width=True)
                     generated_charts['analise_categorica'] = fig_pie
 
@@ -117,7 +124,9 @@ def render_visualizations(df, analysis_data):
             top_sellers = analysis_data['top_sellers']
             top_sellers_df = top_sellers.reset_index()
             top_sellers_df.columns = ['Vendedor', 'Total de Vendas']
-            fig = px.bar(top_sellers_df, x='Vendedor', y='Total de Vendas', title='Top 5 Vendedores por Vendas')
+            # CORREÇÃO FINAL: Adiciona a paleta de cores
+            fig = px.bar(top_sellers_df, x='Vendedor', y='Total de Vendas', title='Top 5 Vendedores por Vendas', color='Vendedor',
+                         color_discrete_sequence=color_palette)
             st.plotly_chart(fig, use_container_width=True)
             generated_charts['top_vendedores'] = fig
 
@@ -126,7 +135,9 @@ def render_visualizations(df, analysis_data):
             top_products = analysis_data['top_products']
             top_products_df = top_products.reset_index()
             top_products_df.columns = ['Produto', 'Total de Vendas']
-            fig = px.bar(top_products_df, x='Produto', y='Total de Vendas', title='Top 5 Produtos Mais Vendidos')
+            # CORREÇÃO FINAL: Adiciona a paleta de cores
+            fig = px.bar(top_products_df, x='Produto', y='Total de Vendas', title='Top 5 Produtos Mais Vendidos', color='Produto',
+                         color_discrete_sequence=color_palette)
             st.plotly_chart(fig, use_container_width=True)
             generated_charts['top_produtos'] = fig
 
@@ -135,7 +146,9 @@ def render_visualizations(df, analysis_data):
             bottom_products = analysis_data['bottom_products']
             bottom_products_df = bottom_products.reset_index()
             bottom_products_df.columns = ['Produto', 'Total de Vendas']
-            fig = px.bar(bottom_products_df, x='Produto', y='Total de Vendas', title='Top 5 Produtos Menos Vendidos')
+            # CORREÇÃO FINAL: Adiciona a paleta de cores
+            fig = px.bar(bottom_products_df, x='Produto', y='Total de Vendas', title='Top 5 Produtos Menos Vendidos', color='Produto',
+                         color_discrete_sequence=color_palette)
             st.plotly_chart(fig, use_container_width=True)
             generated_charts['bottom_produtos'] = fig
 

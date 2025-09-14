@@ -1,8 +1,9 @@
 import streamlit as st
 import pandas as pd
+import re
 
 from components import sidebar, visualizations
-from utils import data_loader, pdf_generator # Importe o novo módulo
+from utils import data_loader, pdf_generator
 from models import ai_analyzer
 
 # --- 1. CONFIGURAÇÃO DA PÁGINA ---
@@ -44,20 +45,22 @@ if uploaded_file:
                 analysis_report, analysis_data = ai_analyzer.analyze_dataframe(df)
                 
                 st.subheader("🤖 Análise e Insights da IA")
-                st.markdown(analysis_report)
+                st.markdown(analysis_report) # Exibe o relatório com formatação no site
                 st.markdown("---")
 
                 # --- 4. VISUALIZAÇÕES INTERATIVAS ---
                 st.subheader("📊 Explore Seus Dados")
-                # Captura os gráficos gerados para usar no PDF
                 generated_charts = visualizations.render_visualizations(df, analysis_data)
 
                 # --- 5. GERAÇÃO E DOWNLOAD DO PDF ---
                 st.markdown("---")
                 st.subheader("📄 Exportar Relatório")
                 
-                # Gera o PDF em memória com o novo layout e gráficos dinâmicos
-                pdf_bytes = pdf_generator.create_pdf_report(analysis_report, generated_charts)
+                # "Limpa" o texto do relatório para o PDF, removendo a formatação Markdown
+                pdf_report_text = re.sub(r'###\s*|(\*\*|`)', '', analysis_report)
+                
+                # Gera o PDF em memória com o texto já limpo
+                pdf_bytes = pdf_generator.create_pdf_report(pdf_report_text, generated_charts)
                 
                 st.download_button(
                     label="Baixar Relatório Completo em PDF",
