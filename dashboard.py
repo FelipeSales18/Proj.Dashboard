@@ -22,44 +22,85 @@ A IA irá identificar padrões, correlações e pontos de atenção nos seus dad
 st.markdown("---")
 
 # --- 2. SIDEBAR E CARREGAMENTO DE DADOS ---
-uploaded_file = sidebar.show_sidebar()
+uploaded_file = sidebar.show_uploader_and_info()
 
 if uploaded_file:
-    df = data_loader.load_data(uploaded_file)
+    df_original = data_loader.load_data(uploaded_file)
 
-    if df is not None:
+    if df_original is not None:
         # 🔹 Ajuste: converter automaticamente colunas de texto em categóricas
-        for col in df.select_dtypes(include="object").columns:
-            df[col] = df[col].astype("category")
+        for col in df_original.select_dtypes(include="object").columns:
+            df_original[col] = df_original[col].astype("category")
 
-        st.success(f"Arquivo '{uploaded_file.name}' carregado com sucesso! A análise será iniciada.")
+        # --- RENDERIZA FILTROS DINÂMICOS NA SIDEBAR ---
+        selected_filters = sidebar.show_filters(df_original)
+        df = df_original.copy() # Cria uma cópia para aplicar os filtros
+
+        # --- APLICA OS FILTROS AO DATAFRAME ---
+        if selected_filters:
+            # Filtro de data
+            if 'date_range' in selected_filters:
+                start_date, end_date = selected_filters['date_range']
+                date_col = selected_filters['date_col']
+                df[date_col] = pd.to_datetime(df[date_col])
+                df = df[df[date_col].between(start_date, end_date)]
+
+            # Filtros categóricos
+            for col, values in selected_filters.items():
+                if col not in ['date_range', 'date_col']:
+                    df = df[df[col].isin(values)]
         
-        # Exibe um preview dos dados em um expander
-        with st.expander("Clique para ver uma amostra dos dados carregados"):
+        st.success(f"Arquivo '{uploaded_file.name}' carregado com sucesso! Exibindo dados com base nos filtros selecionados.")
+        
+        with st.expander("Clique para ver uma amostra dos dados (já filtrados)"):
             st.dataframe(df.head())
         st.markdown("---")
 
-        # --- 3. ANÁLISE AUTOMÁTICA DA IA ---
-        with st.spinner("Aguarde... A IA está analisando seus dados..."):
+        # --- 3. RESUMO EXECUTIVO (KPIs) ---
+        st.subheader("🚀 Resumo Executivo")
+        
+        # CORREÇÃO APLICADA AQUI
+        kpi_metrics = {}
+        if 'Vendas' in df.columns:
+            kpi_metrics['Total de Vendas'] = ('Vendas', 'sum')
+        if 'Receita_Liquida' in df.columns:
+            kpi_metrics['Total de Receita'] = ('Receita_Liquida', 'sum')
+        if 'Vendedor' in df.columns:
+            kpi_metrics['Vendedores Únicos'] = ('Vendedor', 'nunique')
+
+        if kpi_metrics:
+            cols = st.columns(len(kpi_metrics))
+            i = 0
+            for label, (col_name, metric_type) in kpi_metrics.items():
+                col_metric = cols[i]
+                if metric_type == 'sum':
+                    value = df[col_name].sum()
+                    col_metric.metric(label=label, value=f"R$ {value:,.2f}")
+                elif metric_type == 'nunique':
+                    value = df[col_name].nunique()
+                    col_metric.metric(label=label, value=value)
+                i += 1
+        else:
+            st.info("Não foram encontradas colunas como 'Vendas', 'Receita_Liquida' ou 'Vendedor' para gerar KPIs automaticamente.")
+        st.markdown("---")
+
+
+        # --- 4. ANÁLISE AUTOMÁTICA DA IA ---
+        with st.spinner("Aguarde... A IA está analisando os dados filtrados..."):
             try:
                 analysis_report, analysis_data = ai_analyzer.analyze_dataframe(df)
                 
                 st.subheader("🤖 Análise e Insights da IA")
-                st.markdown(analysis_report) # Exibe o relatório com formatação no site
+                st.markdown(analysis_report)
                 st.markdown("---")
 
-                # --- 4. VISUALIZAÇÕES INTERATIVAS ---
                 st.subheader("📊 Explore Seus Dados")
                 generated_charts = visualizations.render_visualizations(df, analysis_data)
 
-                # --- 5. GERAÇÃO E DOWNLOAD DO PDF ---
                 st.markdown("---")
                 st.subheader("📄 Exportar Relatório")
                 
-                # "Limpa" o texto do relatório para o PDF, removendo a formatação Markdown
                 pdf_report_text = re.sub(r'###\s*|(\*\*|`)', '', analysis_report)
-                
-                # Gera o PDF em memória com o texto já limpo
                 pdf_bytes = pdf_generator.create_pdf_report(pdf_report_text, generated_charts)
                 
                 st.download_button(
