@@ -59,7 +59,6 @@ if uploaded_file:
         # --- 3. RESUMO EXECUTIVO (KPIs) ---
         st.subheader("🚀 Resumo Executivo")
         
-        # CORREÇÃO APLICADA AQUI
         kpi_metrics = {}
         if 'Vendas' in df.columns:
             kpi_metrics['Total de Vendas'] = ('Vendas', 'sum')
@@ -84,35 +83,50 @@ if uploaded_file:
             st.info("Não foram encontradas colunas como 'Vendas', 'Receita_Liquida' ou 'Vendedor' para gerar KPIs automaticamente.")
         st.markdown("---")
 
-
         # --- 4. ANÁLISE AUTOMÁTICA DA IA ---
-        with st.spinner("Aguarde... A IA está analisando os dados filtrados..."):
-            try:
-                analysis_report, analysis_data = ai_analyzer.analyze_dataframe(df)
-                
-                st.subheader("🤖 Análise e Insights da IA")
-                st.markdown(analysis_report)
-                st.markdown("---")
+        st.subheader("🤖 Análise e Insights da IA")
 
-                st.subheader("📊 Explore Seus Dados")
-                generated_charts = visualizations.render_visualizations(df, analysis_data)
+        # Cria a barra de progresso e o espaço para o texto
+        progress_bar = st.progress(0)
+        progress_text = st.empty()
 
-                st.markdown("---")
-                st.subheader("📄 Exportar Relatório")
-                
-                pdf_report_text = re.sub(r'###\s*|(\*\*|`)', '', analysis_report)
-                pdf_bytes = pdf_generator.create_pdf_report(pdf_report_text, generated_charts)
-                
-                st.download_button(
-                    label="Baixar Relatório Completo em PDF",
-                    data=pdf_bytes,
-                    file_name=f"relatorio_analise_{uploaded_file.name}.pdf",
-                    mime="application/pdf"
-                )
+        def progress_callback(progress, message):
+            progress_bar.progress(progress)
+            progress_text.text(message)
 
-            except Exception as e:
-                st.error(f"Ocorreu um erro durante a análise dos dados: {e}")
-                st.warning("Verifique se o arquivo está formatado corretamente e tente novamente.")
+        try:
+            # Passa a função de callback para o analisador
+            analysis_report, analysis_data = ai_analyzer.analyze_dataframe(df, progress_callback)
+            
+            # Limpa a barra de progresso e a mensagem após a conclusão
+            progress_text.empty()
+            progress_bar.empty()
+
+            st.markdown(analysis_report)
+            st.markdown("---")
+
+            st.subheader("📊 Explore Seus Dados")
+            generated_charts = visualizations.render_visualizations(df, analysis_data)
+
+            st.markdown("---")
+            st.subheader("📄 Exportar Relatório")
+            
+            pdf_report_text = re.sub(r'###\s*|(\*\*|`)', '', analysis_report)
+            pdf_bytes = pdf_generator.create_pdf_report(pdf_report_text, generated_charts)
+            
+            st.download_button(
+                label="Baixar Relatório Completo em PDF",
+                data=pdf_bytes,
+                file_name=f"relatorio_analise_{uploaded_file.name}.pdf",
+                mime="application/pdf"
+            )
+
+        except Exception as e:
+            st.error(f"Ocorreu um erro durante a análise dos dados: {e}")
+            st.warning("Verifique se o arquivo está formatado corretamente e tente novamente.")
+            # Limpa a barra de progresso em caso de erro
+            progress_text.empty()
+            progress_bar.empty()
 
 else:
     st.info("Aguardando o carregamento de um arquivo Excel para iniciar a análise.")
